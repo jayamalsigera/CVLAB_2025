@@ -1,6 +1,7 @@
 #include "ImageFilters.h"
 #include <iostream>
-
+    
+// Common function to apply either max or min filter
 cv::Mat applyFilter(const cv::Mat& input, int kernelSize, bool isMax)
 {
     if (kernelSize % 2 == 0) {
@@ -31,14 +32,17 @@ cv::Mat applyFilter(const cv::Mat& input, int kernelSize, bool isMax)
     return output;
 }
 
+// Max filter using applyFilter
 cv::Mat maxFilter(const cv::Mat& input, int kernelSize) {
     return applyFilter(input, kernelSize, true);
 }
 
+// Min filter using applyFilter
 cv::Mat minFilter(const cv::Mat& input, int kernelSize) {
     return applyFilter(input, kernelSize, false);
 }
 
+// Median filter implementation
 cv::Mat medianFilter(const cv::Mat& input, int kernelSize) {
     if (kernelSize % 2 == 0) {
         std::cerr << "ERROR: Kernel size must be an odd number." << std::endl;
@@ -65,6 +69,7 @@ cv::Mat medianFilter(const cv::Mat& input, int kernelSize) {
     return output;
 }
 
+// Gaussian blur using OpenCV
 cv::Mat gaussianFilter(const cv::Mat& input, int kernelSize) {
     if (kernelSize % 2 == 0) {
         std::cerr << "ERROR: Kernel size must be an odd number." << std::endl;
@@ -76,44 +81,36 @@ cv::Mat gaussianFilter(const cv::Mat& input, int kernelSize) {
     return output;
 }
 
-void plotHistogram(const cv::Mat& grayscaleImage, int bins) {
-    if (grayscaleImage.channels() != 1) {
-        std::cerr << "ERROR: Histogram requires a grayscale image." << std::endl;
-        return;
-    }
-
+// Plot grayscale histogram
+void plotHistogram(const cv::Mat& grayImg, int bins, const std::string& windowName) {
     int histSize[] = { bins };
-    float range[] = { 0, 256 }; // [0, 256)
-    const float* histRange[] = { range };
+    float range[] = { 0, 256 };
+    const float* ranges[] = { range };
 
     cv::Mat hist;
-    cv::calcHist(&grayscaleImage, 1, 0, cv::Mat(), hist, 1, histSize, histRange);
+    cv::calcHist(&grayImg, 1, 0, cv::Mat(), hist, 1, histSize, ranges);
 
-    // Normalize for visualization
-    int hist_w = 512, hist_h = 400;
+    int hist_w = 512; 
+    int hist_h = 300; 
     int bin_w = cvRound((double) hist_w / bins);
-    cv::Mat histImage(hist_h, hist_w, CV_8UC1, cv::Scalar(255));
 
-    cv::normalize(hist, hist, 0, histImage.rows, cv::NORM_MINMAX);
+    cv::Mat histImage(hist_h + 40, hist_w + 60, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    cv::normalize(hist, hist, 0, hist_h, cv::NORM_MINMAX);
+
+    int offsetX = 30, offsetY = 20;
+
+    cv::line(histImage, {offsetX, offsetY}, {offsetX, hist_h + offsetY}, cv::Scalar(0, 0, 0), 1);
+    cv::line(histImage, {offsetX, hist_h + offsetY}, {hist_w + offsetX, hist_h + offsetY}, cv::Scalar(0, 0, 0), 1);
 
     for (int i = 1; i < bins; i++) {
         cv::line(histImage,
-                 cv::Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
-                 cv::Point(bin_w * i, hist_h - cvRound(hist.at<float>(i))),
-                 cv::Scalar(0), 2);
+            {offsetX + bin_w * (i - 1), hist_h + offsetY - cvRound(hist.at<float>(i - 1))},
+            {offsetX + bin_w * i, hist_h + offsetY - cvRound(hist.at<float>(i))},
+            cv::Scalar(0, 0, 255), 2);
     }
 
-    std::string windowName = "Histogram (" + std::to_string(bins) + " bins)";
+    cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
     cv::imshow(windowName, histImage);
 }
 
-cv::Mat equalizeHistogram(const cv::Mat& grayscaleImage) {
-    if (grayscaleImage.channels() != 1) {
-        std::cerr << "ERROR: Histogram equalization requires a grayscale image." << std::endl;
-        return grayscaleImage.clone();
-    }
-
-    cv::Mat equalized;
-    cv::equalizeHist(grayscaleImage, equalized);
-    return equalized;
-}

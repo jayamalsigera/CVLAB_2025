@@ -5,55 +5,46 @@
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        std::cerr << "ERROR: Provide path to image file" << std::endl;
-        return 1;
-    }
+	// Check if image path is provided via command line
+	if(argc < 2){
+		std::cerr << "ERROR: Provide path to img file" << std::endl;
+		return 1;
+	}
+	
+	// Read the image from the given file path
+	cv::Mat img = cv::imread(argv[1]);
+	
+	// Check if image was loaded successfully
+	if(img.empty()){
+		std::cerr << "ERROR: Check file path/name" << std::endl;
+		return 1;
+	}
+	
+	// Display the original image in a window
+	cv::namedWindow("Original");
+	cv::imshow("Original", img);
+	cv::waitKey(0);
+	
+	// Convert the image to grayscale
+	cv::Mat gray;
+	cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+	
+	// Show the grayscale image in a separate window
+	cv::namedWindow("Grayscale_Image");
+	cv::imshow("Grayscale_Image", gray);
 
-    cv::Mat img = cv::imread(argv[1]);
+	// Save the grayscale image to a file
+	cv::imwrite("Garden_grayscale.jpg", gray);
 
-    if (img.empty()) {
-        std::cerr << "ERROR: Image cannot be loaded. Check file path." << std::endl;
-        return 1;
-    }
-
-    int kernelSize;
-    std::cout << "Enter kernel size (odd number): ";
-    std::cin >> kernelSize;
-
-    if (kernelSize % 2 == 0) {
-        std::cerr << "ERROR: Kernel size must be odd." << std::endl;
-        return 1;
-    }
-
-    // Convert to grayscale
-    cv::Mat gray;
-    if (img.channels() == 3) {
-        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-    } else {
-        gray = img.clone();
-    }
-
-    // Apply filters
-    cv::Mat maxFiltered = maxFilter(img, kernelSize);
-    cv::Mat minFiltered = minFilter(img, kernelSize);
-    cv::Mat medianFiltered = medianFilter(img, kernelSize);
-    cv::Mat gaussianFiltered = gaussianFilter(img, kernelSize);
-
-    // Display original and filtered images
-    cv::imshow("Original Image", img);
-    cv::imshow("Max Filtered", maxFiltered);
-    cv::imshow("Min Filtered", minFiltered);
-    cv::imshow("Median Filtered", medianFiltered);
-    cv::imshow("Gaussian Filtered", gaussianFiltered);
-
-    // Plot histograms for the grayscale version of the image
-    plotHistogram(gray, 256);
-    plotHistogram(gray, 64);
-    plotHistogram(gray, 16);
-
-    cv::waitKey(0);
-    cv::destroyAllWindows();
+    // Plot histograms
+    plotHistogram(gray, 256, "Histogram (256 bins)");
+    plotHistogram(gray, 64, "Histogram (64 bins)");
+    plotHistogram(gray, 16, "Histogram (16 bins)");
+    
+    // Wait for a key press
+	cv::waitKey(0);
+	// Close all OpenCV windows
+	cv::destroyAllWindows();
 
     return 0;
 }
